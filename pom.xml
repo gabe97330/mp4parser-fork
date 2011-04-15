@@ -4,7 +4,7 @@
     <groupId>com.coremedia.drm</groupId>
     <artifactId>all</artifactId>
     <packaging>pom</packaging>
-    <version>2-SNAPSHOT</version>
+    <version>1.1.1-prismod-SNAPSHOT</version>
     <name>IsoBox4j - All</name>
     <url>https://contributions.coremedia.com/isobox4j</url>
     <licenses>
