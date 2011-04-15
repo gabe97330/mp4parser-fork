@@ -50,65 +50,77 @@ public class TextSampleEntry extends SampleEntry implements ContainerBox {
   private long displayFlags; // 32 bits
   private int horizontalJustification; // 8 bit
   private int verticalJustification;  // 8 bit
-  private byte[] backgroundColorRgba; // 4 bytes
+  private byte[] backgroundColorRgba = new byte[4]; // 4 bytes
+    private int[] boxRecord = new int[4]; // top, left, bottom, right
 
-  public TextSampleEntry(byte[] type) {
-    super(type);
-  }
+    private byte[] styleBytes = new byte[12];
 
-
-    public void parse(IsoBufferWrapper in, long size, BoxParser boxParser, Box lastMovieFragmentBox) throws IOException {
-        super.parse(in, size, boxParser, lastMovieFragmentBox);
-        displayFlags = in.readUInt32();
-        horizontalJustification = in.readUInt8();
-        verticalJustification = in.readUInt8();
-        backgroundColorRgba[0] = (byte) in.readUInt8();
-        backgroundColorRgba[1] = (byte) in.readUInt8();
-        backgroundColorRgba[2] = (byte) in.readUInt8();
-        backgroundColorRgba[3] = (byte) in.readUInt8();
-
-        size -= 18;
-        ArrayList<Box> someBoxes = new ArrayList<Box>();
-        while (size > 0) {
-            Box b = boxParser.parseBox(in, this, lastMovieFragmentBox);
-            someBoxes.add(b);
-            size -= b.getSize();
-        }
-        boxes = someBoxes.toArray(new AbstractBox[someBoxes.size()]);
-        assert size == 0 : "After parsing all boxes there are " + size + " bytes left. 0 bytes required";
+    public TextSampleEntry(byte[] type) {
+      super(type);
     }
 
 
-  @SuppressWarnings("unchecked")
-  public <T extends Box> T[] getBoxes(Class<T> clazz) {
-    ArrayList<T> boxesToBeReturned = new ArrayList<T>();
-    for (Box boxe : boxes) {
-      if (clazz.isInstance(boxe)) {
-        boxesToBeReturned.add(clazz.cast(boxe));
+      public void parse(IsoBufferWrapper in, long size, BoxParser boxParser, Box lastMovieFragmentBox) throws IOException {
+          super.parse(in, size, boxParser, lastMovieFragmentBox);
+          displayFlags = in.readUInt32();
+          horizontalJustification = in.readUInt8();
+          verticalJustification = in.readUInt8();
+          backgroundColorRgba[0] = (byte) in.readUInt8();
+          backgroundColorRgba[1] = (byte) in.readUInt8();
+          backgroundColorRgba[2] = (byte) in.readUInt8();
+          backgroundColorRgba[3] = (byte) in.readUInt8();
+          boxRecord[0] = (int) in.readUInt16(); //top
+          boxRecord[1] = (int) in.readUInt16(); // left
+          boxRecord[2] = (int) in.readUInt16(); // bottom
+          boxRecord[3] = (int) in.readUInt16(); // right
+
+          in.read(styleBytes, 0, 12);
+
+          size -= 30;
+
+          ArrayList<Box> someBoxes = new ArrayList<Box>();
+          while (size > 0) {
+              Box b = boxParser.parseBox(in, this, lastMovieFragmentBox);
+              someBoxes.add(b);
+              size -= b.getSize();
+          }
+          boxes = someBoxes.toArray(new AbstractBox[someBoxes.size()]);
+          assert size == 0 : "After parsing all boxes there are " + size + " bytes left. 0 bytes required";
       }
+
+
+    @SuppressWarnings("unchecked")
+    public <T extends Box> T[] getBoxes(Class<T> clazz) {
+      ArrayList<T> boxesToBeReturned = new ArrayList<T>();
+      for (Box boxe : boxes) {
+        if (clazz.isInstance(boxe)) {
+          boxesToBeReturned.add(clazz.cast(boxe));
+        }
+      }
+      return boxesToBeReturned.toArray((T[]) Array.newInstance(clazz, boxesToBeReturned.size()));
     }
-    return boxesToBeReturned.toArray((T[]) Array.newInstance(clazz, boxesToBeReturned.size()));
-  }
 
-  public Box[] getBoxes() {
-    return boxes;
-  }
-
-  protected long getContentSize() {
-    long contentSize = 18;
-    for (Box boxe : boxes) {
-      contentSize += boxe.getSize();
+    public Box[] getBoxes() {
+      return boxes;
     }
-    return contentSize;
-  }
 
-  public String getDisplayName() {
-    return "Text Sample Entry";
-  }
+    protected long getContentSize() {
+      long contentSize = 30;
+      contentSize += 8; //include the 8 bytes from SampleEntry header
+      for (Box boxe : boxes) {
+        contentSize += boxe.getSize();
+      }
+      return contentSize;
+    }
 
-  public String toString() {
-    return "TextSampleEntry";
-  }
+    public String getDisplayName() {
+      return "Text Sample Entry";
+    }
+
+    public String toString() {
+      return "TextSampleEntry";
+    }
+
 
   protected void getContent(IsoOutputStream isos) throws IOException {
     isos.write(new byte[6]);
@@ -117,10 +129,9 @@ public class TextSampleEntry extends SampleEntry implements ContainerBox {
     isos.writeUInt32(displayFlags);
     isos.writeUInt8(horizontalJustification);
     isos.writeUInt8(verticalJustification);
-    isos.writeUInt8(backgroundColorRgba[0]);
-    isos.writeUInt8(backgroundColorRgba[1]);
-    isos.writeUInt8(backgroundColorRgba[2]);
-    isos.writeUInt8(backgroundColorRgba[3]);
+    for (byte b: backgroundColorRgba) isos.writeUInt8(b);
+    for (int i: boxRecord) isos.writeUInt16(i);
+    isos.write(styleBytes, 0, 12);
 
     for (Box boxe : boxes) {
       boxe.getBox(isos);
