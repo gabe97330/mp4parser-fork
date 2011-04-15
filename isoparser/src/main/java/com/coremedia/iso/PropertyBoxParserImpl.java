@@ -39,7 +39,7 @@ public class PropertyBoxParserImpl extends AbstractBoxParser {
     @Override
     public AbstractBox createBox(byte[] type, byte[] userType, byte[] parent, Box lastMovieFragmentBox) {
 
-        String constructor = mapping.getProperty(IsoFile.bytesToFourCC(parent) + "-" + IsoFile.bytesToFourCC(type));
+        String constructor = mapping.getProperty(IsoFile.bytesToFourCC(parent) + "-" + IsoFile.bytesToFourCC2(type));
         if (constructor == null) {
             constructor = mapping.getProperty(IsoFile.bytesToFourCC(type));
         }
