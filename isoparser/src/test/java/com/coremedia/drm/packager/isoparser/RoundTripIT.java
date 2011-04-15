@@ -33,7 +33,7 @@ import java.io.OutputStream;
 /**
  * Tests ISO Roundtrip.
  */
-public class RoundTripTest extends TestCase {
+public class RoundTripIT extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
